@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>365 ABDO SPORT | النسخة الملكية</title>
+    <style>
+        :root { --gold: #ffd700; --bg: #0b0e11; --card: #1c2127; --blue: #007fff; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: white; font-family: sans-serif; overflow-x: hidden; height: 100%; }
+
+        /* شاشة الافتتاح المحسنة */
+        #splash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+        }
+        .start-btn {
+            background: var(--gold); color: black; border: none; padding: 20px 40px;
+            font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 0 20px var(--gold); transition: 0.3s; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* الواجهة الرئيسية */
+        #main-app { display: none; }
+        .header { 
+            background: var(--card); padding: 15px; border-bottom: 3px solid var(--gold);
+            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;
+        }
+        .game-btn { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .news-card { background: var(--card); margin: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
+        .news-img { width: 100%; height: 200px; object-fit: cover; }
+        .news-info { padding: 15px; }
+        .tag { color: var(--gold); border: 1px solid var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+
+        /* نافذة اللعبة */
+        #game-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center;
+        }
+        .game-box { background: var(--card); padding: 20px; border-radius: 15px; text-align: center; width: 85%; max-width: 350px; }
+        .opt-btn { background: var(--blue); color: white; border: none; padding: 12px; margin: 8px 0; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<audio id="thunder" src="https://www.soundjay.com/nature/thunder-strike-1.mp3"></audio>
+<audio id="crowd" src="https://www.soundjay.com/misc/sounds/stadium-crowd-1.mp3" loop></audio>
+
+<div id="splash">
+    <h1 style="color: var(--gold); font-size: 40px; margin-bottom: 30px;">ABDO SPORT</h1>
+    <button class="start-btn" onclick="initApp()">دخول وهتاف ⚽</button>
+</div>
+
+<div id="main-app">
+    <div class="header">
+        <button class="game-btn" onclick="openGame()">🎮 خمن اللاعب</button>
+        <h2 style="margin:0; color:var(--gold); font-size: 18px;">ABDO SPORT PRO</h2>
+        <div style="width: 50px;"></div>
+    </div>
+    <div id="news-list"></div>
+</div>
+
+<div id="game-modal">
+    <div class="game-box">
+        <h3 style="color: var(--gold);">من صاحب هذا الاحتفال؟</h3>
+        <img id="q-img" src="" style="width: 100%; border-radius: 10px; margin-bottom: 10px;">
+        <div id="options-container"></div>
+        <button onclick="closeGame()" style="background:none; color:grey; border:none; margin-top:15px; cursor:pointer;">إغلاق</button>
+    </div>
+</div>
+
+<script>
+    const newsData = [
+        { cat: "FIFA THE BEST 2025", img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018", txt: "رسمياً: ديمبيلي يتوج بجائزة 'الأفضل' من الفيفا كأفضل لاعب في العالم." },
+        { cat: "المغرب بطل العرب", img: "https://images.unsplash.com/photo-1522778119026-d647f0596c20", txt: "احتفالات تاريخية في الرباط بعد تتويج المنتخب المغربي بكأس العرب 2025." },
+        { cat: "مونديال 2026", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2", txt: "مجموعة نارية: المغرب يواجه فرنسا في قرعة كأس العالم 2026 والافتتاح بالمكسيك." },
+        { cat: "محمد صلاح", img: "https://images.unsplash.com/photo-1518091043644-c1d445bcc97a", txt: "رسمياً: ليفربول يعلن تجديد عقد محمد صلاح حتى صيف 2027." }
+    ];
+
+    const players = [
+        { name: "رونالدو", img: "https://images.unsplash.com/photo-1551958219-acbc60899496", opts: ["رونالدو", "مبابي", "هالاند"] },
+        { name: "ميسي", img: "https://images.unsplash.com/photo-1508615070457-7ba3a1400ba3", opts: ["ميسي", "نيمار", "صلاح"] }
+    ];
+
+    function initApp() {
+        // تشغيل الأصوات
+        document.getElementById('crowd').play();
+        document.getElementById('thunder').play();
+
+        // هتاف ابدو سبورت
+        const speech = new SpeechSynthesisUtterance("Abdo Sport! Abdo Sport!");
+        speech.lang = 'en-US';
+        window.speechSynthesis.speak(speech);
+
+        // إخفاء شاشة البداية
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        
+        loadNews();
+    }
+
+    function loadNews() {
+        document.getElementById('news-list').innerHTML = newsData.map(n => `
+            <div class="news-card">
+                <img class="news-img" src="${n.img}">
+                <div class="news-info">
+                    <span class="tag">${n.cat}</span>
+                    <p style="margin-top:10px; font-weight:bold; line-height:1.5;">${n.txt}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openGame() {
+        const p = players[Math.floor(Math.random() * players.length)];
+        document.getElementById('q-img').src = p.img;
+        document.getElementById('options-container').innerHTML = p.opts.map(o => `
+            <button class="opt-btn" onclick="checkAnswer('${o}','${p.name}')">${o}</button>
+        `).join('');
+        document.getElementById('game-modal').style.display = 'flex';
+    }
+
+    function checkAnswer(choice, correct) {
+        if(choice === correct) { alert("إجابة أسطورية! 🏆"); closeGame(); }
+        else { alert("خطأ! حاول مرة أخرى ⚽"); }
+    }
+
+    function closeGame() { document.getElementById('game-modal').style.display = 'none'; }
+</script>
+
+</body>
+</html>
